@@ -20,6 +20,13 @@ RUN yes | unminimize \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
 ENV LANG=en_US.UTF-8
 
+# For testing only
+# RUN yes | unminimize \
+#   sudo \
+#   && locale-gen en_US.UTF-8 \
+#   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
+# ENV LANG=en_US.UTF-8
+
 ### Gitpod user ###
 # '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 RUN useradd -l -u 33333 -G sudo -md /home/gitpod -s /bin/bash -p gitpod gitpod \
@@ -227,15 +234,19 @@ RUN curl -sSL --output ~/puppet-tools.deb https://apt.puppet.com/puppet-tools-re
   && curl -sSL --output ~/puppet.deb https://apt.puppet.com/puppet6-release-bionic.deb \
   && dpkg -i ~/puppet-tools.deb \
   && dpkg -i ~/puppet.deb \
-  && rm -f ~/puppet*.db \
+  && rm -f ~/puppet*.deb \
   && export DEBIAN_FRONTEND=noninteractive \
   && apt-get update \
-  && apt-get install -yq pdk puppet\
+  && apt-get install -yq pdk puppet-agent \
   && mkdir -p ~/.config/puppet \
-  && echo -e "---\ndisabled: true" > ~/.config/puppet/analytics.yml
+  && echo -e "---\ndisabled: true" > ~/.config/puppet/analytics.yml \
+  && ln -s /opt/puppetlabs/bin/puppet /usr/local/bin/puppet \
+  && ln -s /opt/puppetlabs/bin/facter /usr/local/bin/facter \
+  && ln -s /opt/puppetlabs/bin/hiera /usr/local/bin/hiera \
+  && chown -R gitpod:gitpod ~/.config
 
 ### checks ###
 # no root-owned files in the home directory
 RUN notOwnedFile=$(find . -not "(" -user gitpod -and -group gitpod ")" -print -quit) \
   && { [ -z "$notOwnedFile" ] \
-  || { echo "Error: not all files/dirs in $HOME are owned by 'gitpod' user & group"; exit 1; } }
+  || { echo "Error: not all files/dirs in $HOME are owned by 'gitpod' user & group: $notOwnedFile"; exit 1; } }
