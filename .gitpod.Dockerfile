@@ -221,6 +221,19 @@ RUN { echo && echo "PS1='\[\e]0;\u \w\a\]\[\033[01;32m\]\u\[\033[00m\] \[\033[01
 #   && .cargo/bin/rustup target add x86_64-unknown-linux-musl
 # RUN bash -lc "cargo install cargo-watch"
 
+### PDK and Puppet Agent ###
+# TODO: Should we optin to analytics?
+RUN curl -sSL --output ~/puppet-tools.deb https://apt.puppet.com/puppet-tools-release-bionic.deb \
+  && curl -sSL --output ~/puppet.deb https://apt.puppet.com/puppet6-release-bionic.deb \
+  && dpkg -i ~/puppet-tools.deb \
+  && dpkg -i ~/puppet.deb \
+  && rm -f ~/puppet*.db \
+  && export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
+  && apt-get install -yq pdk puppet\
+  && mkdir -p ~/.config/puppet \
+  && echo -e "---\ndisabled: true" > ~/.config/puppet/analytics.yml
+
 ### checks ###
 # no root-owned files in the home directory
 RUN notOwnedFile=$(find . -not "(" -user gitpod -and -group gitpod ")" -print -quit) \
